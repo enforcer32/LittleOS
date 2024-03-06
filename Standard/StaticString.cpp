@@ -1,7 +1,7 @@
 #include <Standard/StaticString.h>
 #include <Standard/CString.h>
 
-namespace Standard
+namespace Std
 {
 	StaticString::~StaticString()
 	{

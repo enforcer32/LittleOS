@@ -3,7 +3,7 @@
 #include <Standard/UniquePtr.h>
 #include <Standard/Types.h>
 
-namespace Standard
+namespace Std
 {
 	class StaticString
 	{

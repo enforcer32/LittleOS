@@ -7,6 +7,7 @@
 #include <Kernel/CPU/Interrupts/IRQ.h>
 #include <Kernel/Memory/KMalloc.h>
 #include <Kernel/Memory/PageManager.h>
+#include <Kernel/Drivers/ATA.h>
 
 namespace Kernel
 {
@@ -45,6 +46,10 @@ namespace Kernel
 		//CPU::IRQInstallHandler(0, SimpleIRQ);
 
 		CPU::EnableInterrupts();
+
+		// Init FileSystem
+		//Drivers::ATA HDD2;
+		
 
 		KPrintf("Kernel Initialized\n");
 		for(;;);

@@ -2,7 +2,7 @@
 
 #include <Standard/Types.h>
 
-namespace Standard
+namespace Std
 {
 	size_t Strlen(const char* str);
 	size_t Strnlen(const char* str, size_t maxlen);

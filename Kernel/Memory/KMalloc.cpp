@@ -64,7 +64,7 @@ namespace Kernel
 		{
 			void* ptr = KMalloc(size);
 			if (!ptr) return 0;
-			Standard::Memset(ptr, 0x0, size);
+			Std::Memset(ptr, 0x0, size);
 			return ptr;
 		}
 

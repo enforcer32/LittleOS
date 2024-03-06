@@ -34,14 +34,14 @@ namespace Kernel
 			case 'i': {
 				val = va_arg(ap, int);
 				char tmp[12];
-				Standard::TypeConverter::IntToStr(val, tmp, sizeof(tmp), 10);
+				Std::TypeConverter::IntToStr(val, tmp, sizeof(tmp), 10);
 				KPrint(tmp);
 				break;
 			}
 			case 'x': {
 				val = va_arg(ap, int);
 				char tmp[12];
-				Standard::TypeConverter::IntToStr(val, tmp, sizeof(tmp), 16);
+				Std::TypeConverter::IntToStr(val, tmp, sizeof(tmp), 16);
 				KPrint(tmp);
 				break;
 			}

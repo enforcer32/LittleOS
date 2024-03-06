@@ -2,7 +2,7 @@
 
 #include <Standard/Types.h>
 
-namespace Standard
+namespace Std
 {
 	namespace TypeConverter
 	{

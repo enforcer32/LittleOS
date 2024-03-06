@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Standard
+namespace Std
 {
 	template <typename T>
 	class UniquePtr

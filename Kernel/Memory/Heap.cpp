@@ -36,7 +36,7 @@ namespace Kernel
 			if (!VerifyBlockTable())
 				return -EINVAL;
 
-			Standard::Memset(m_Blocks, 0x0, m_BlockCount);
+			Std::Memset(m_Blocks, 0x0, m_BlockCount);
 			return 0;
 		}
 
