@@ -19,7 +19,7 @@ namespace Kernel
 {
 	namespace Memory
 	{
-		int32_t Heap::Init(uint32_t* startAddr, uint32_t* endAddr, uint32_t blockSizeBytes, uint32_t heapSizeBytes)
+		int32_t Heap::Init(uint32_t* startAddr, uint32_t* endAddr, uint32_t blockSizeBytes, uint32_t heapSizeBytes, uint32_t* blockTableAddress)
 		{
 			KPrintf("Initializing Heap...\n");
 
@@ -30,8 +30,8 @@ namespace Kernel
 			m_EndAddress = endAddr;
 			m_BlockSizeBytes = blockSizeBytes;
 			m_BlockCount = m_HeapSizeBytes / m_BlockSizeBytes;
-			m_Blocks = (uint8_t*)(startAddr);
-			m_StartAddress = (uint32_t*)(((uint8_t*)startAddr) + m_BlockCount); // Reserved space for block table
+			m_Blocks = (uint8_t*)blockTableAddress;
+			m_StartAddress = startAddr; // Reserved space for block table
 
 			if (!VerifyBlockTable())
 				return -EINVAL;
@@ -54,7 +54,7 @@ namespace Kernel
 
 		bool Heap::VerifyBlockTable()
 		{
-			uint32_t tableSize = ((uint8_t*)m_EndAddress - (uint8_t*)(((uint8_t*)m_StartAddress) - m_BlockCount));
+			uint32_t tableSize = ((uint8_t*)m_EndAddress - (uint8_t*)m_StartAddress);
 			uint32_t totalBlock = tableSize / m_BlockSizeBytes;
 			return (m_BlockCount == totalBlock);
 		}

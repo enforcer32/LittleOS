@@ -9,7 +9,7 @@ namespace Kernel
 		class Heap
 		{
 		public:
-			int32_t Init(uint32_t* startAddr, uint32_t* endAddr, uint32_t blockSizeBytes, uint32_t heapSizeBytes);
+			int32_t Init(uint32_t* startAddr, uint32_t* endAddr, uint32_t blockSizeBytes, uint32_t heapSizeBytes, uint32_t* blockTableAddress);
 			uint32_t* Malloc(uint32_t size);
 			void Free(uint32_t* ptr);
 
