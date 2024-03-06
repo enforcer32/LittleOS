@@ -13,15 +13,18 @@ LIBDIR	=
 BUILDDIR  = Build
 ARCHDIR   = Kernel/Arch/x86
 KERNELDIR = Kernel
+DRIVERSDIR = Kernel/Drivers
 
 include $(ARCHDIR)/make.config
 include $(KERNELDIR)/make.config
+include $(DRIVERSDIR)/make.config
 
 CFLAGS 	:= $(CFLAGS) $(LIBDIR)
 
 OBJS=\
 $(ARCH_OBJS) \
 $(KERNEL_OBJS) \
+$(DRIVERS_OBJS) \
 
 OBJS_OUT := $(foreach item,$(OBJS),$(BUILDDIR)/$(item))
 
