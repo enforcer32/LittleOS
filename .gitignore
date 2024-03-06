@@ -1,0 +1,22 @@
+# CONFIG
+.env
+config.json
+
+# Folders
+build/
+
+# VS
+.vscode/
+.vs/
+**.sln
+**.vcxproj
+**.vcxproj.filters
+**.vcxproj.user
+
+# Others
+*.expand
+*.bin
+*.o
+*.d
+*.a
+*.iso
