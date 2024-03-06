@@ -51,7 +51,7 @@ $(BIN): $(OBJS) $(ARCHDIR)/linker.ld
 
 .cpp.o:
 	@mkdir -p $(BUILDDIR)/$(@D)
-	$(CC) -c $< -o $(BUILDDIR)/$@ -std=c++17 $(CFLAGS) $(INCLUDES)
+	$(CC) -c $< -o $(BUILDDIR)/$@ -std=c++20 $(CFLAGS) $(INCLUDES)
 
 %.asm.o: %.asm
 	@mkdir -p $(BUILDDIR)/$(@D)

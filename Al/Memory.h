@@ -39,6 +39,14 @@ namespace Al
 		{
 		}
 
+		template<typename U>
+		UniquePtr(UniquePtr<U>&& rhs)
+		{
+			constexpr bool convertible = requires(T * t, U * u) { t = u; };
+			static_assert(convertible, "No suitable user-defined conversion from U to T");
+			m_Ptr = rhs.Release();
+		}
+
 		UniquePtr& operator=(UniquePtr&& rhs)
 		{
 			if (this != &rhs)
@@ -91,6 +99,9 @@ namespace Al
 		}
 
 	private:
+		template<typename U>
+		friend class UniquePtr;
+
 		T* m_Ptr;
 	};
 
@@ -128,6 +139,17 @@ namespace Al
 
 		SharedPtr(const SharedPtr<T>& rhs)
 		{
+			m_Ptr = rhs.m_Ptr;
+			m_Counter = rhs.m_Counter;
+			(*m_Counter)++;
+		}
+
+		template<typename U>
+		SharedPtr(const SharedPtr<U>& rhs)
+		{
+			constexpr bool convertible = requires(T* t, U* u) { t = u; };
+			static_assert(convertible, "No suitable user-defined conversion from U to T");
+
 			m_Ptr = rhs.m_Ptr;
 			m_Counter = rhs.m_Counter;
 			(*m_Counter)++;
@@ -205,6 +227,9 @@ namespace Al
 		}
 
 	private:
+		template<typename U>
+		friend class SharedPtr;
+
 		T* m_Ptr;
 		size_t* m_Counter;
 	};

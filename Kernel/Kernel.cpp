@@ -53,7 +53,7 @@ namespace Kernel
 		size_t len = 100;
 		char* buf = new char[len+1];
 		buf[len] = 0;
-		auto file = FileSystem::VirtualFileSystem::Open("/hello/folder/test.txt");
+		auto file = FileSystem::VirtualFileSystem::Open("/hello/greet.txt");
 		if(file)
 			file->Read(buf, len, 0);
 
