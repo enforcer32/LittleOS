@@ -60,10 +60,11 @@ namespace Kernel
 		{
 			KPrintf("Initializing ATA Interface for Bus: %d, Drive: %d\n", bus, drive);
 
+			m_SectorSize = ATA_SECTOR_SIZE;
 			m_Bus = bus;
 			m_Drive = drive;
 
-			uint8_t* data = new uint8_t[ATA_SECTOR_SIZE];
+			uint8_t* data = new uint8_t[m_SectorSize];
 			if (!data)
 				return -ENOMEM;
 
@@ -73,7 +74,8 @@ namespace Kernel
 				if (!model)
 					return -ENOMEM;
 
-				for (size_t i = 0; i < 40; i += 2) {
+				for (size_t i = 0; i < 40; i += 2)
+				{
 					model[i] = data[ATA_IDENT_MODEL + i + 1];
 					model[i + 1] = data[ATA_IDENT_MODEL + i];
 				}
@@ -87,41 +89,39 @@ namespace Kernel
 				KPrintf("Detected ATA Device: %s\n", model);
 			}
 
-			m_Initialized = true;
 			return 0;
 		}
 
-		int32_t ATA::Read28(uint32_t lba, uint32_t sector, void* outbuf)
+		size_t ATA::GetSectorSize() const
 		{
-			if (!m_Initialized)
-			{
-				KPrintf("ATA Not Initialized\n");
-				return -1;
-			}
+			return m_SectorSize;
+		}
 
-			uint8_t* ptr = (uint8_t*)outbuf;
+		int32_t ATA::Read28(void* buf, size_t sector, size_t lba)
+		{
+			uint8_t* ptr = (uint8_t*)buf;
 			for (size_t i = 0; i < sector; i++)
 			{
-				ReadSector28(lba, ptr);
-				ptr += ATA_SECTOR_SIZE;
+				ReadSector28(ptr, lba + i);
+				ptr += m_SectorSize;
 			}
 
-			return sector * ATA_SECTOR_SIZE;
+			return sector * m_SectorSize;
 		}
 		
-		int32_t ATA::Write28(uint32_t lba, uint32_t sector, void* inbuf)
+		int32_t ATA::Write28(const void* buf, size_t sector, size_t lba)
 		{
-			uint8_t* ptr = (uint8_t*)inbuf;
+			uint8_t* ptr = (uint8_t*)buf;
 			for (size_t i = 0; i < sector; i++)
 			{
-				WriteSector28(lba, ptr);
-				ptr += ATA_SECTOR_SIZE;
+				WriteSector28(ptr, lba + i);
+				ptr += m_SectorSize;
 			}
 
-			return sector * ATA_SECTOR_SIZE;
+			return sector * m_SectorSize;
 		}
 
-		int32_t ATA::Identify(void* outbuf)
+		int32_t ATA::Identify(void* buf)
 		{
 			SelectDrive();
 
@@ -143,7 +143,8 @@ namespace Kernel
 
 			retry:
 				status = CPU::Port::insb(m_Port + ATA_REG_STATUS);
-				if (status & ATA_SR_ERR) {
+				if (status & ATA_SR_ERR)
+				{
 					KPrintf("Drive %d on Bus %d has error\n", m_Drive, m_Bus);
 					return status;
 				}
@@ -151,8 +152,9 @@ namespace Kernel
 				while (!(status & ATA_SR_DRQ))
 					goto retry;
 
-				uint16_t* ptr = (uint16_t*)outbuf;
-				for (uint32_t i = 0; i < 256; i++) {
+				uint16_t* ptr = (uint16_t*)buf;
+				for (uint32_t i = 0; i < 256; i++)
+				{
 					*ptr = CPU::Port::insw(m_Port + ATA_REG_DATA);
 					ptr++;
 				}
@@ -205,7 +207,19 @@ namespace Kernel
 				goto retry;
 		}
 
-		int8_t ATA::ReadSector28(uint32_t lba, void* outbuf)
+		void ATA::Flush()
+		{
+			CPU::Port::outb(m_Port + ATA_REG_COMMAND, ATA_CMD_CACHE_FLUSH);
+
+			uint8_t status = CPU::Port::insb(m_Port + ATA_REG_COMMAND);
+			while ((status & ATA_SR_BSY) && !(status & ATA_SR_DRQ))
+				status = CPU::Port::insb(m_Port + ATA_REG_COMMAND);
+
+			if (status & ATA_SR_ERR)
+				KPrintf("ATA ERR DEVICE FAILURE\n");
+		}
+
+		int8_t ATA::ReadSector28(void* buf, size_t lba)
 		{
 			uint8_t seldrive = (m_Drive == ATADrive::Master ? 0xE0 : 0xF0);
 			CPU::Port::outb(m_Port + ATA_REG_HDDEVSEL, (seldrive | (uint8_t)(lba >> 24 & 0x0F)));
@@ -218,8 +232,9 @@ namespace Kernel
 
 			Poll();
 
-			uint16_t* ptr = (uint16_t*)outbuf;
-			for (size_t i = 0; i < 256; i++) {
+			uint16_t* ptr = (uint16_t*)buf;
+			for (size_t i = 0; i < 256; i++)
+			{
 				*ptr = CPU::Port::insw(m_Port + ATA_REG_DATA);
 				ptr++;
 			}
@@ -228,7 +243,7 @@ namespace Kernel
 			return 0;
 		}
 
-		int8_t ATA::WriteSector28(uint32_t lba, void* inbuf)
+		int8_t ATA::WriteSector28(const void* buf, size_t lba)
 		{
 			uint8_t seldrive = (m_Drive == ATADrive::Master ? 0xE0 : 0xF0);
 			CPU::Port::outb(m_Port + ATA_REG_HDDEVSEL, (seldrive | (uint8_t)(lba >> 24 & 0x0F)));
@@ -241,13 +256,14 @@ namespace Kernel
 
 			Poll();
 
-			uint16_t* ptr = (uint16_t*)inbuf;
-			for (size_t i = 0; i < 256; i++) {
+			uint16_t* ptr = (uint16_t*)buf;
+			for (size_t i = 0; i < 256; i++)
+			{
 				CPU::Port::outw(m_Port + ATA_REG_DATA, *ptr);
 				ptr++;
 			}
 
-			CPU::Port::outb(m_Port + ATA_REG_COMMAND, ATA_CMD_CACHE_FLUSH);
+			Flush();
 
 			Delay400NS();
 			return 0;

@@ -7,7 +7,9 @@
 #include <Kernel/CPU/Interrupts/IRQ.h>
 #include <Kernel/Memory/KMalloc.h>
 #include <Kernel/Memory/PageManager.h>
-#include <Kernel/Drivers/ATA.h>
+#include <Kernel/FileSystem/Disk.h>
+#include <Standard/Utility.h>
+#include <Standard/CString.h>
 
 namespace Kernel
 {
@@ -48,9 +50,11 @@ namespace Kernel
 		CPU::EnableInterrupts();
 
 		// Init FileSystem
-		//Drivers::ATA HDD2;
+		auto ata = Std::UniquePtr<Drivers::ATA>(new Drivers::ATA);
+		ata->Init(Drivers::ATABus::Primary, Drivers::ATADrive::Slave);
+		FileSystem::Disk disk;
+		disk.Init(Std::Move(ata));
 		
-
 		KPrintf("Kernel Initialized\n");
 		for(;;);
 	}

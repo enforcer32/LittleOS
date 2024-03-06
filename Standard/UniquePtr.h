@@ -64,7 +64,7 @@ namespace Std
 			return ptr;
 		}
 
-		T* Reset(T* ptr = nullptr)
+		void Reset(T* ptr = nullptr)
 		{
 			if (m_Ptr)
 				delete m_Ptr;
