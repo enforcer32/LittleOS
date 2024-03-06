@@ -6,7 +6,6 @@
 #include <Kernel/FileSystem/Ext2/Inode.h>
 #include <Al/Vector.h>
 #include <Al/Memory.h>
-#include <Al/StaticString.h>
 
 namespace Kernel
 {
@@ -26,8 +25,8 @@ namespace Kernel
 			const Ext2BlockGroupDescriptor& GetBlockGroupDescriptor(uint32_t group) const;
 
 			Al::SharedPtr<Ext2Inode> GetInode(uint32_t inode);
-			Al::SharedPtr<Ext2Inode> GetInodeFromDir(const Al::SharedPtr<Ext2Inode>& inodebuf, const Al::UniquePtr<Al::StaticString>& name);
-			Al::SharedPtr<Ext2Inode> GetInodeFromPath(const Al::UniquePtr<Al::StaticString>& path);
+			Al::SharedPtr<Ext2Inode> GetInodeFromDir(const Al::SharedPtr<Ext2Inode>& inodebuf, Al::StringView name);
+			Al::SharedPtr<Ext2Inode> GetInodeFromPath(Al::StringView path);
 
 			void* ReadBlock(uint32_t block);
 			void* ReadFile(const Al::SharedPtr<Ext2Inode>& inodebuf, size_t size);

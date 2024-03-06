@@ -19,7 +19,7 @@ namespace Kernel
 			Al::UniquePtr<Disk> disk = Al::MakeUnique<Disk>();
 			disk->Init(Al::Move(ata));
 
-			Al::SharedPtr<KFileSystem> ext2fs((KFileSystem*)(new Ext2FileSystem));
+			Al::SharedPtr<KFileSystem> ext2fs = Al::MakeShared<Ext2FileSystem>();
 			if (ext2fs->Init(Al::Move(disk)) != 0)
 				KPanic("Failed to Initialize Ext2FileSystem\n");
 

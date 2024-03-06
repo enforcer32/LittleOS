@@ -37,18 +37,15 @@ namespace Kernel
 
 		Al::SharedPtr<File> Ext2FileSystem::Open(Al::StringView path)
 		{
-			if (!GetInodeFromPath(Al::StaticString::Create(path)))
-			{
-				KPrintf("Ext2FileSystem: File Not Found: %s\n", path.Data());
-				return nullptr;
-			}
+			if (GetInodeFromPath(path))
+				return Al::MakeShared<File>(Al::SharedPtr<KFileSystem>(this), path);
 
-			return Al::MakeShared<File>(Al::SharedPtr<KFileSystem>(this), path);
+			return nullptr;
 		}
 
 		int32_t Ext2FileSystem::Read(const Al::SharedPtr<File>& file, void* buf, size_t len, size_t offset)
 		{
-			auto inode = GetInodeFromPath(Al::StaticString::Create(file->GetFilePath()));
+			auto inode = GetInodeFromPath(file->GetFilePath());
 			return ReadFile(inode, buf, len);
 		}
 
@@ -108,7 +105,7 @@ namespace Kernel
 		Al::SharedPtr<Ext2Inode> Ext2FileSystem::GetInode(uint32_t inode)
 		{
 			if (inode == 0)
-				return {};
+				return nullptr;
 
 			uint32_t bg = (inode - 1) / m_Superblock->BlockGroupInodeCount;
 			auto& bgd = GetBlockGroupDescriptor(bg);
@@ -125,10 +122,10 @@ namespace Kernel
 			return inodebuf;
 		}
 
-		Al::SharedPtr<Ext2Inode> Ext2FileSystem::GetInodeFromDir(const Al::SharedPtr<Ext2Inode>& inodebuf, const Al::UniquePtr<Al::StaticString>& name)
+		Al::SharedPtr<Ext2Inode> Ext2FileSystem::GetInodeFromDir(const Al::SharedPtr<Ext2Inode>& inodebuf, Al::StringView name)
 		{
 			if (!(inodebuf->Mode & (uint16_t)Ext2InodeType::Directory))
-				return {};
+				return nullptr;
 
 			for (size_t i = 0; i < EXT2_DBP_SIZE; i++)
 			{
@@ -146,7 +143,7 @@ namespace Kernel
 				while (dir->NameLength > 0 && dir->Inode > 0 && dir->Inode < m_Superblock->InodeCount)
 				{
 					dir->Name[dir->NameLength] = 0;
-					if (!Al::Strncmp((char*)dir->Name, name->Data(), dir->NameLength))
+					if (!Al::Strncmp((char*)dir->Name, name.Data(), dir->NameLength))
 					{
 						uint32_t inode = dir->Inode;
 						delete data;
@@ -157,40 +154,40 @@ namespace Kernel
 
 				delete data;
 			}
-			return {};
+			return nullptr;
 		}
 
-		Al::SharedPtr<Ext2Inode> Ext2FileSystem::GetInodeFromPath(const Al::UniquePtr<Al::StaticString>& path)
+		Al::SharedPtr<Ext2Inode> Ext2FileSystem::GetInodeFromPath(Al::StringView path)
 		{
-			if (path->Size() == 1 && path->Data()[0] == '/')
+			if (path.Size() == 1 && path.Data()[0] == '/')
 				return m_RootInode;
 
 			Ext2PathParser pathParser(path);
 			auto parsed = pathParser.Parse();
 			if (!parsed)
 			{
-				KPrintf("Ext2FileSystem Failed to ParsePath: %s\n", path->Data());
-				return {};
+				KPrintf("Ext2FileSystem Failed to ParsePath: %s\n", path.Data());
+				return nullptr;
 			}
 
 			auto node = m_RootInode;
 			for (size_t i = 0; i < parsed->Parts.Size(); i++)
 			{
-				node = GetInodeFromDir(node, parsed->Parts[i]);
+				node = GetInodeFromDir(node, parsed->Parts[i]->View());
 				if (!node)
 				{
-					KPrintf("Ext2FileSystem Failed to Get %s From %s\n", parsed->Parts[i]->Data(), path->Data());
-					return {};
+					KPrintf("Ext2FileSystem Failed to Get %s From %s\n", parsed->Parts[i]->Data(), path.Data());
+					return nullptr;
 				}
 
 				if (!(node->Mode & (uint16_t)Ext2InodeType::Directory))
 				{
-					KPrintf("Ext2FileSystem Not a Directory: %s\n", parsed->Parts[i]->Data(), path->Data());
-					return {};
+					KPrintf("Ext2FileSystem Not a Directory: %s\n", parsed->Parts[i]->Data(), path.Data());
+					return nullptr;
 				}
 			}
 
-			return GetInodeFromDir(node, parsed->Target);
+			return GetInodeFromDir(node, parsed->Target->View());
 		}
 
 		void* Ext2FileSystem::ReadBlock(uint32_t block)

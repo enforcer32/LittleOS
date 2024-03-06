@@ -21,7 +21,7 @@ namespace Kernel
 		class Ext2PathParser
 		{
 		public:
-			Ext2PathParser(const Al::UniquePtr<Al::StaticString>& path);
+			Ext2PathParser(Al::StringView path);
 			Al::UniquePtr<Ext2Path> Parse();
 
 		private:

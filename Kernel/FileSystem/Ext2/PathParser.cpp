@@ -5,8 +5,8 @@ namespace Kernel
 {
 	namespace FileSystem
 	{
-		Ext2PathParser::Ext2PathParser(const Al::UniquePtr<Al::StaticString>& path)
-			: m_Path(path->Clone())
+		Ext2PathParser::Ext2PathParser(Al::StringView path)
+			: m_Path(Al::StaticString::Create(path))
 		{
 		}
 
