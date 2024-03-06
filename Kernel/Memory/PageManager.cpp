@@ -1,7 +1,7 @@
 #include <Kernel/Memory/PageManager.h>
 #include <Kernel/Memory/KMalloc.h>
-#include <Kernel/Lib/KString.h>
 #include <Kernel/Lib/Errno.h>
+#include <Standard/CString.h>
 
 // PAGE GENERAL DEFS
 #define PAGING_TOTAL_ENTRIES 1024
@@ -42,13 +42,13 @@ namespace Kernel
 		Page* PageManager::Allocate(uint8_t flags)
 		{
 			Page* page = new Page[PAGING_TOTAL_ENTRIES];
-			KMemset(page, 0, sizeof(Page) * PAGING_TOTAL_ENTRIES);
+			Standard::Memset(page, 0, sizeof(Page) * PAGING_TOTAL_ENTRIES);
 			
 			uint32_t offset = 0;
 			for (uint32_t i = 0; i < PAGING_TOTAL_ENTRIES; i++)
 			{
 				uint32_t* table = new uint32_t[PAGING_TOTAL_ENTRIES];
-				KMemset(table, 0, sizeof(uint32_t) * PAGING_TOTAL_ENTRIES);
+				Standard::Memset(table, 0, sizeof(uint32_t) * PAGING_TOTAL_ENTRIES);
 
 				for (uint32_t j = 0; j < PAGING_TOTAL_ENTRIES; j++)
 					table[j] = (offset + (j * PAGING_PAGE_SIZE)) | flags;

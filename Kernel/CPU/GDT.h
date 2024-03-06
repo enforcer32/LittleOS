@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <Standard/Types.h>
 
 #define GDT_TOTAL_SEGMENTS 5 // NO TSS YET?
 

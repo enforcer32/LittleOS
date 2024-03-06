@@ -1,7 +1,6 @@
 #pragma once
 
-#include <stdint.h>
-#include <stddef.h>
+#include <Standard/Types.h>
 
 void* operator new(size_t size);
 void* operator new[](size_t size);

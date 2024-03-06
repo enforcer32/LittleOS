@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <Standard/Types.h>
 
 // PAGE ENTRY FLAGS
 #define PAGING_IS_PRESENT 0x1

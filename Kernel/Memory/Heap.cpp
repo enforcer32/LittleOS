@@ -1,7 +1,7 @@
 #include <Kernel/Memory/Heap.h>
 #include <Kernel/Lib/Errno.h>
-#include <Kernel/Lib/KString.h>
 #include <Kernel/Lib/KPrintf.h>
+#include <Standard/CString.h>
 
 /* HEAP_BLOCK_START, HEAP_BLOCK_CONTIGUOUS, 0, 0, HEAP_BLOCK_TYPE_4BIT */
 #define HEAP_BLOCK_START 0x80
@@ -36,7 +36,7 @@ namespace Kernel
 			if (!VerifyBlockTable())
 				return -EINVAL;
 
-			KMemset(m_Blocks, 0x0, m_BlockCount);
+			Standard::Memset(m_Blocks, 0x0, m_BlockCount);
 			return 0;
 		}
 

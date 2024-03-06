@@ -1,8 +1,8 @@
 #include <Kernel/Memory/KMalloc.h>
 #include <Kernel/Memory/Heap.h>
-#include <Kernel/Lib/KString.h>
 #include <Kernel/Lib/KPrintf.h>
 #include <Kernel/Lib/KPanic.h>
+#include <Standard/CString.h>
 
 void* operator new(size_t size)
 {
@@ -64,7 +64,7 @@ namespace Kernel
 		{
 			void* ptr = KMalloc(size);
 			if (!ptr) return 0;
-			KMemset(ptr, 0x0, size);
+			Standard::Memset(ptr, 0x0, size);
 			return ptr;
 		}
 

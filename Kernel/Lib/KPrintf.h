@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include<Standard/Types.h>
 #include <stdarg.h>
 
 namespace Kernel

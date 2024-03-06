@@ -1,6 +1,6 @@
 #pragma once
 
-#include <stdint.h>
+#include <Standard/Types.h>
 
 #define IDT_TOTAL_INTERRUPTS 256
 

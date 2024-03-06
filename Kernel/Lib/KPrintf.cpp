@@ -1,8 +1,6 @@
 #include <Kernel/Lib/KPrintf.h>
-#include <Kernel/Lib/KStdLib.h>
 #include <Kernel/Drivers/VGA.h>
-
-#include <stdarg.h>
+#include <Standard/TypeConverter.h>
 
 namespace Kernel
 {
@@ -36,14 +34,14 @@ namespace Kernel
 			case 'i': {
 				val = va_arg(ap, int);
 				char tmp[12];
-				Kitoa(val, tmp, sizeof(tmp), 10);
+				Standard::TypeConverter::IntToStr(val, tmp, sizeof(tmp), 10);
 				KPrint(tmp);
 				break;
 			}
 			case 'x': {
 				val = va_arg(ap, int);
 				char tmp[12];
-				Kitoa(val, tmp, sizeof(tmp), 16);
+				Standard::TypeConverter::IntToStr(val, tmp, sizeof(tmp), 16);
 				KPrint(tmp);
 				break;
 			}
