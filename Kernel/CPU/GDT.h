@@ -2,7 +2,7 @@
 
 #include <stdint.h>
 
-#define GDT_TOTAL_SEGMENTS 6
+#define GDT_TOTAL_SEGMENTS 5 // NO TSS YET?
 
 namespace Kernel
 {
