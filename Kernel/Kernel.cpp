@@ -46,7 +46,7 @@ namespace Kernel
 
 		CPU::EnableInterrupts();
 
-		KPrintf("Kernal Initialized\n");
+		KPrintf("Kernel Initialized\n");
 		for(;;);
 	}
 }
