@@ -6,9 +6,12 @@ DATA_SEG equ gdt_data - gdt_start ; Selector 0x10 will be our data segment offse
 
 ; BIOS PARAMETER BLOCK
 _bpb:
-	jmp short _start
+	jmp short _pre
 	nop
 	times 33 db 0
+
+_pre:
+	jmp 0x0:_start
 
 _start:
 	; Clear interrupts

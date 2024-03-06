@@ -25,6 +25,10 @@ _start:
 	; Kernel
 	call KMain
 
-	jmp $
+	; Halt
+	cli
+.hang:
+	hlt
+	jmp .hang
 
 times 512-($-$$) db 0

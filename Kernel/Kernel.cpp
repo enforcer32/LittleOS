@@ -5,6 +5,7 @@
 #include <Kernel/CPU/Interrupts/IDT.h>
 #include <Kernel/CPU/Interrupts/PIC.h>
 #include <Kernel/CPU/Interrupts/IRQ.h>
+#include <Kernel/Memory/KMem.h>
 
 namespace Kernel
 {
@@ -27,12 +28,16 @@ namespace Kernel
 		if (CPU::PICRemap() != 0)
 			KPanic("Failed to Remap PIC\n");
 
-		CPU::EnableInterrupts();
+		if (Memory::KMemInit() != 0)
+			KPanic("Failed to Initialize KMem\n");
 
 		// SIMPLE IRQ
 		//CPU::IRQInstallHandler(0, SimpleIRQ);
 
+		CPU::EnableInterrupts();
+
 		KPrintf("Kernal Initialized\n");
+		for(;;);
 	}
 }
 
