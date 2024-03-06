@@ -18,6 +18,11 @@ namespace Al
 		{
 		}
 
+		UniquePtr(nullptr_t)
+			: m_Ptr(nullptr)
+		{
+		}
+
 		explicit UniquePtr(T* ptr)
 			: m_Ptr(ptr)
 		{
@@ -98,18 +103,16 @@ namespace Al
 		{
 		}
 
+		SharedPtr(nullptr_t)
+			: m_Ptr(nullptr), m_Counter(nullptr)
+		{
+		}
+
 		explicit SharedPtr(T* ptr)
 			: m_Ptr(ptr)
 		{
 			m_Counter = new size_t;
 			*m_Counter = 1;
-		}
-
-		SharedPtr(SharedPtr<T>& rhs)
-		{
-			m_Ptr = rhs.m_Ptr;
-			m_Counter = rhs.m_Counter;
-			(*m_Counter)++;
 		}
 
 		~SharedPtr()
@@ -123,9 +126,24 @@ namespace Al
 			}
 		}
 
+		SharedPtr(const SharedPtr<T>& rhs)
+		{
+			m_Ptr = rhs.m_Ptr;
+			m_Counter = rhs.m_Counter;
+			(*m_Counter)++;
+		}
+
 		SharedPtr(SharedPtr&& rhs)
 			: m_Ptr(rhs.Release())
 		{
+		}
+
+		SharedPtr& operator=(const SharedPtr& rhs)
+		{
+			m_Ptr = rhs.m_Ptr;
+			m_Counter = rhs.m_Counter;
+			(*m_Counter)++;
+			return *this;
 		}
 
 		SharedPtr& operator=(SharedPtr&& rhs)

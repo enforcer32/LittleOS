@@ -39,6 +39,11 @@ namespace Al
 		return !Al::Strncmp(m_Data, rhs.m_Data, m_Size);
 	}
 
+	bool StaticString::operator==(StringView rhs) const
+	{
+		return !Al::Strncmp(m_Data, rhs.Data(), m_Size);
+	}
+
 	bool StaticString::operator!=(const char* rhs) const
 	{
 		return Al::Strncmp(m_Data, rhs, m_Size);
@@ -47,6 +52,11 @@ namespace Al
 	bool StaticString::operator!=(const StaticString& rhs) const
 	{
 		return Al::Strncmp(m_Data, rhs.m_Data, m_Size);
+	}
+
+	bool StaticString::operator!=(StringView rhs) const
+	{
+		return Al::Strncmp(m_Data, rhs.Data(), m_Size);
 	}
 
 	UniquePtr<StaticString> StaticString::Clone() const
@@ -69,6 +79,11 @@ namespace Al
 		return m_Size == 0;
 	}
 
+	StringView StaticString::View() const
+	{
+		return { m_Data, m_Size };
+	}
+
 	UniquePtr<StaticString> StaticString::Create(const char* str)
 	{
 		return UniquePtr<StaticString>(new StaticString(str));
@@ -82,5 +97,10 @@ namespace Al
 	UniquePtr<StaticString> StaticString::Create(size_t size)
 	{
 		return UniquePtr<StaticString>(new StaticString(size));
+	}
+
+	UniquePtr<StaticString> StaticString::Create(StringView str)
+	{
+		return UniquePtr<StaticString>(new StaticString(str.Data()));
 	}
 }

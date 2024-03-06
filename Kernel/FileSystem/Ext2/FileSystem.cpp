@@ -35,6 +35,29 @@ namespace Kernel
 			return 0;
 		}
 
+		Al::SharedPtr<File> Ext2FileSystem::Open(Al::StringView path)
+		{
+			if (!GetInodeFromPath(Al::StaticString::Create(path)))
+			{
+				KPrintf("Ext2FileSystem: File Not Found: %s\n", path.Data());
+				return nullptr;
+			}
+
+			return Al::MakeShared<File>(Al::SharedPtr<KFileSystem>(this), path);
+		}
+
+		int32_t Ext2FileSystem::Read(const Al::SharedPtr<File>& file, void* buf, size_t len, size_t offset)
+		{
+			auto inode = GetInodeFromPath(Al::StaticString::Create(file->GetFilePath()));
+			return ReadFile(inode, buf, len);
+		}
+
+		int32_t Ext2FileSystem::Write(const Al::SharedPtr<File>& file, const void* buf, size_t len, size_t offset)
+		{
+			KPrintf("Ext2FileSystem: WRITE NOT IMPLEMENTED!\n");
+			return -1;
+		}
+
 		int32_t Ext2FileSystem::ParseSuperblock()
 		{
 			m_Superblock = Al::MakeUnique<Ext2Superblock>();
@@ -107,7 +130,7 @@ namespace Kernel
 			if (!(inodebuf->Mode & (uint16_t)Ext2InodeType::Directory))
 				return {};
 
-			for (uint32_t i = 0; i < EXT2_DBP_SIZE; i++)
+			for (size_t i = 0; i < EXT2_DBP_SIZE; i++)
 			{
 				if (!inodebuf->DBP[i]) continue;
 
@@ -151,7 +174,7 @@ namespace Kernel
 			}
 
 			auto node = m_RootInode;
-			for (uint32_t i = 0; i < parsed->Parts.Size(); i++)
+			for (size_t i = 0; i < parsed->Parts.Size(); i++)
 			{
 				node = GetInodeFromDir(node, parsed->Parts[i]);
 				if (!node)
@@ -170,7 +193,7 @@ namespace Kernel
 			return GetInodeFromDir(node, parsed->Target);
 		}
 
-		void* Ext2FileSystem::ReadBlock(size_t block)
+		void* Ext2FileSystem::ReadBlock(uint32_t block)
 		{
 			uint8_t* buf = new uint8_t[m_Superblock->BlockSize];
 			if (m_Disk->Read(buf, m_Superblock->BlockSize, (block * (m_Superblock->BlockSize / m_Disk->GetSectorSize()))) != (int32_t)m_Superblock->BlockSize)
@@ -190,7 +213,7 @@ namespace Kernel
 			uint8_t* data = new uint8_t[size];
 			Al::Memset(data, 0, size);
 
-			for (size_t i = 0; i < EXT2_DBP_SIZE; i++)
+			for (uint32_t i = 0; i < EXT2_DBP_SIZE; i++)
 			{
 				if (inodebuf->DBP[i])
 				{
@@ -261,6 +284,87 @@ namespace Kernel
 
 		end:
 			return data;
+		}
+
+		int32_t Ext2FileSystem::ReadFile(const Al::SharedPtr<Ext2Inode>& inodebuf, void* buf, size_t len)
+		{
+			if (!(inodebuf->Mode & (uint16_t)Ext2InodeType::RegularFile))
+				return -1;
+
+			uint32_t read = 0, curr = 0;
+			uint8_t* data = (uint8_t*)buf;
+
+			for (uint32_t i = 0; i < EXT2_DBP_SIZE; i++)
+			{
+				if (inodebuf->DBP[i])
+				{
+					uint8_t* block = (uint8_t*)ReadBlock(inodebuf->DBP[i]);
+					while (read < len && curr < m_Superblock->BlockSize && block[curr])
+						data[read++] = block[curr++];
+					curr = 0;
+					delete[] block;
+
+					if (read >= len)
+						goto end;
+				}
+			}
+
+			if (read < len)
+			{
+				if (inodebuf->SIBP)
+				{
+					uint32_t* blocks = (uint32_t*)ReadBlock(inodebuf->SIBP);
+					for (size_t i = 0; i < m_Superblock->BlockSize / 4; i++)
+					{
+						if (blocks[i])
+						{
+							uint8_t* block = (uint8_t*)ReadBlock(blocks[i]);
+							while (read < len && curr < m_Superblock->BlockSize && block[curr])
+								data[read++] = block[curr++];
+							curr = 0;
+							delete[] block;
+
+							if (read >= len)
+								goto end;
+						}
+					}
+					delete blocks;
+				}
+
+				if (inodebuf->DIBP)
+				{
+					uint32_t* blocks = (uint32_t*)ReadBlock(inodebuf->DIBP);
+					for (uint32_t i = 0; i < m_Superblock->BlockSize / 4; i++)
+					{
+						if (blocks[i])
+						{
+							uint32_t* subblocks = (uint32_t*)ReadBlock(blocks[i]);
+							for (uint32_t i = 0; i < m_Superblock->BlockSize / 4; i++)
+							{
+								if (subblocks[i])
+								{
+									uint8_t* block = (uint8_t*)ReadBlock(subblocks[i]);
+									while (read < len && curr < m_Superblock->BlockSize && block[curr])
+										data[read++] = block[curr++];
+									curr = 0;
+									delete[] block;
+
+									if (read >= len)
+										goto end;
+								}
+							}
+							delete subblocks;
+						}
+					}
+					delete blocks;
+				}
+
+				if (inodebuf->TIBP)
+					KPanic("Ext2FileSystem Doesn't Support Reading Triply Indirect Block Pointer\n");
+			}
+
+		end:
+			return read;
 		}
 
 		void Ext2FileSystem::DumpSuperblock()

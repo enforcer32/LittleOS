@@ -5,4 +5,5 @@
 
 namespace Al
 {
+	using nullptr_t = decltype(nullptr);
 }

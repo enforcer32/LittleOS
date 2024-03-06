@@ -28,6 +28,10 @@ namespace Al
 		size_t Size() const;
 		bool Empty() const;
 		String Substr(size_t pos, size_t len) const;
+		size_t Find(char ch, size_t pos = 0) const;
+
+	public:
+		static const size_t NPOS = -1;
 
 	private:
 		char* m_Data;

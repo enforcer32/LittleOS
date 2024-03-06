@@ -125,4 +125,12 @@ namespace Al
 		buf[len] = 0;
 		return buf;
 	}
+
+	size_t String::Find(char ch, size_t pos) const
+	{
+		for (size_t i = pos; i < m_Size; i++)
+			if (m_Data[i] == ch)
+				return i;
+		return Al::String::NPOS;
+	}
 }
