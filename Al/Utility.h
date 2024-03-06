@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Std
+namespace Al
 {
 	template<typename T>
 	constexpr T&& Move(T& arg)

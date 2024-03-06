@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Std
+namespace Al
 {
 	template<typename T, size_t TSize>
 	class Array

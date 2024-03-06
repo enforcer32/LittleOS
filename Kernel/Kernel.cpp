@@ -8,8 +8,8 @@
 #include <Kernel/Memory/KMalloc.h>
 #include <Kernel/Memory/PageManager.h>
 #include <Kernel/FileSystem/Disk.h>
-#include <Standard/Memory.h>
-#include <Standard/CString.h>
+#include <Al/Memory.h>
+#include <Al/CString.h>
 #include <Kernel/FileSystem/Ext2/FileSystem.h>
 
 namespace Kernel
@@ -51,16 +51,16 @@ namespace Kernel
 		CPU::EnableInterrupts();
 
 		// Init FileSystem
-		auto ata = Std::MakeUnique<Drivers::ATA>();
+		auto ata = Al::MakeUnique<Drivers::ATA>();
 		ata->Init(Drivers::ATABus::Primary, Drivers::ATADrive::Slave);
-		Std::UniquePtr<FileSystem::Disk> disk = Std::MakeUnique<FileSystem::Disk>();
-		disk->Init(Std::Move(ata));
+		Al::UniquePtr<FileSystem::Disk> disk = Al::MakeUnique<FileSystem::Disk>();
+		disk->Init(Al::Move(ata));
 
 		FileSystem::Ext2FileSystem ext2fs;
-		if (ext2fs.Init(Std::Move(disk)) != 0)
+		if (ext2fs.Init(Al::Move(disk)) != 0)
 			KPanic("Failed to Initialize Ext2FileSystem\n");
 
-		auto file = ext2fs.GetInodeFromPath(Std::StaticString::Create("/hello/greet.txt"));
+		auto file = ext2fs.GetInodeFromPath(Al::StaticString::Create("/hello/greet.txt"));
 		if (file->Valid())
 		{
 			KPrintf("Test: %s\n", ext2fs.ReadFile(file, 4096));

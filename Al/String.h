@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Standard/Types.h>
+#include <Al/Types.h>
 
-namespace Std
+namespace Al
 {
 	class String
 	{

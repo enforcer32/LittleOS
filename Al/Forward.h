@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Standard/TypeTraits.h>
+#include <Al/TypeTraits.h>
 
-namespace Std
+namespace Al
 {
 	template< class T >
 	T&& Forward(RemoveReference_t<T>& param)

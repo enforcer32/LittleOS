@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Standard/Memory.h>
+#include <Al/Memory.h>
 
-namespace Std
+namespace Al
 {
 	class StaticString
 	{

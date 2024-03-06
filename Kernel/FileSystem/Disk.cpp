@@ -1,13 +1,13 @@
 #include <Kernel/FileSystem/Disk.h>
-#include <Standard/CString.h>
+#include <Al/CString.h>
 
 namespace Kernel
 {
 	namespace FileSystem
 	{
-		int32_t Disk::Init(Std::UniquePtr<Drivers::ATA> ata)
+		int32_t Disk::Init(Al::UniquePtr<Drivers::ATA> ata)
 		{
-			m_ATA = Std::Move(ata);
+			m_ATA = Al::Move(ata);
 			return 0;
 		}
 
@@ -38,7 +38,7 @@ namespace Kernel
 			sectors++;
 			char* tmp = new char[sectors * sectorSize];
 			m_ATA->Read28(tmp, sectors, offset);
-			Std::Memcpy(buf, tmp, len);
+			Al::Memcpy(buf, tmp, len);
 
 			delete[] tmp;
 			return len;
@@ -56,7 +56,7 @@ namespace Kernel
 			sectors++;
 			char* tmp = new char[sectors * sectorSize];
 			m_ATA->Read28(tmp, sectors, offset);
-			Std::Memcpy(tmp, buf, len);
+			Al::Memcpy(tmp, buf, len);
 			m_ATA->Write28(tmp, sectors, offset);
 
 			delete[] tmp;

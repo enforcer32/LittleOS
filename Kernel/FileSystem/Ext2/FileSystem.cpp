@@ -2,16 +2,16 @@
 #include <Kernel/FileSystem/Ext2/PathParser.h>
 #include <Kernel/Lib/KPrintf.h>
 #include <Kernel/Lib/KPanic.h>
-#include <Standard/Utility.h>
-#include <Standard/CString.h>
+#include <Al/Utility.h>
+#include <Al/CString.h>
 
 namespace Kernel
 {
 	namespace FileSystem
 	{
-		int32_t Ext2FileSystem::Init(Std::UniquePtr<Disk> disk)
+		int32_t Ext2FileSystem::Init(Al::UniquePtr<Disk> disk)
 		{
-			m_Disk = Std::Move(disk);
+			m_Disk = Al::Move(disk);
 
 			if (ParseSuperblock() != 0)
 			{
@@ -37,7 +37,7 @@ namespace Kernel
 
 		int32_t Ext2FileSystem::ParseSuperblock()
 		{
-			m_Superblock = Std::MakeUnique<Ext2Superblock>();
+			m_Superblock = Al::MakeUnique<Ext2Superblock>();
 			if (m_Disk->Read(m_Superblock.Get(), EXT2_SUPERBLOCK_SIZE, (EXT2_SUPERBLOCK_OFFSET / m_Disk->GetSectorSize())) != 1024)
 			{
 				KPrintf("Ext2FileSystem Failed to Read Ext2Superblock\n");
@@ -82,7 +82,7 @@ namespace Kernel
 			return m_BlockGroupDescriptors[group];
 		}
 
-		Std::SharedPtr<Ext2Inode> Ext2FileSystem::GetInode(uint32_t inode)
+		Al::SharedPtr<Ext2Inode> Ext2FileSystem::GetInode(uint32_t inode)
 		{
 			if (inode == 0)
 				return {};
@@ -97,12 +97,12 @@ namespace Kernel
 			uint32_t offset = (index * m_Superblock->InodeSize);
 
 			uint8_t* inodetable = (uint8_t*)ReadBlock(bgd.InodeTable + block);
-			Std::SharedPtr<Ext2Inode> inodebuf = Std::MakeShared<Ext2Inode>(*(Ext2Inode*)(inodetable + offset));
+			Al::SharedPtr<Ext2Inode> inodebuf = Al::MakeShared<Ext2Inode>(*(Ext2Inode*)(inodetable + offset));
 			delete inodetable;
 			return inodebuf;
 		}
 
-		Std::SharedPtr<Ext2Inode> Ext2FileSystem::GetInodeFromDir(const Std::SharedPtr<Ext2Inode>& inodebuf, const Std::UniquePtr<Std::StaticString>& name)
+		Al::SharedPtr<Ext2Inode> Ext2FileSystem::GetInodeFromDir(const Al::SharedPtr<Ext2Inode>& inodebuf, const Al::UniquePtr<Al::StaticString>& name)
 		{
 			if (!(inodebuf->Mode & (uint16_t)Ext2InodeType::Directory))
 				return {};
@@ -123,7 +123,7 @@ namespace Kernel
 				while (dir->NameLength > 0 && dir->Inode > 0 && dir->Inode < m_Superblock->InodeCount)
 				{
 					dir->Name[dir->NameLength] = 0;
-					if (!Std::Strncmp((char*)dir->Name, name->Data(), dir->NameLength))
+					if (!Al::Strncmp((char*)dir->Name, name->Data(), dir->NameLength))
 					{
 						uint32_t inode = dir->Inode;
 						delete data;
@@ -137,7 +137,7 @@ namespace Kernel
 			return {};
 		}
 
-		Std::SharedPtr<Ext2Inode> Ext2FileSystem::GetInodeFromPath(const Std::UniquePtr<Std::StaticString>& path)
+		Al::SharedPtr<Ext2Inode> Ext2FileSystem::GetInodeFromPath(const Al::UniquePtr<Al::StaticString>& path)
 		{
 			if (path->Size() == 1 && path->Data()[0] == '/')
 				return m_RootInode;
@@ -181,14 +181,14 @@ namespace Kernel
 			return buf;
 		}
 
-		void* Ext2FileSystem::ReadFile(const Std::SharedPtr<Ext2Inode>& inodebuf, size_t size)
+		void* Ext2FileSystem::ReadFile(const Al::SharedPtr<Ext2Inode>& inodebuf, size_t size)
 		{
 			if (!(inodebuf->Mode & (uint16_t)Ext2InodeType::RegularFile))
 				return nullptr;
 
 			uint32_t read = 0, curr = 0;
 			uint8_t* data = new uint8_t[size];
-			Std::Memset(data, 0, size);
+			Al::Memset(data, 0, size);
 
 			for (size_t i = 0; i < EXT2_DBP_SIZE; i++)
 			{
@@ -327,7 +327,7 @@ namespace Kernel
 			KPrintf("-----Ext2FileSystem DUMP (%d) BLOCKGROUP DESCRIPTOR END-----\n", m_BlockGroupDescriptorCount);
 		}
 
-		void Ext2FileSystem::DumpInode(const Std::SharedPtr<Ext2Inode>& inodebuf)
+		void Ext2FileSystem::DumpInode(const Al::SharedPtr<Ext2Inode>& inodebuf)
 		{
 			KPrintf("\n-----Ext2FileSystem DUMP INODE START-----\n");
 			KPrintf("Mode = %d\n", inodebuf->Mode);
@@ -352,7 +352,7 @@ namespace Kernel
 			KPrintf("-----Ext2FileSystem DUMP INODE END-----\n");
 		}
 
-		void Ext2FileSystem::DumpDirInode(const Std::SharedPtr<Ext2Inode>& inodebuf)
+		void Ext2FileSystem::DumpDirInode(const Al::SharedPtr<Ext2Inode>& inodebuf)
 		{
 			if (!(inodebuf->Mode & (uint16_t)Ext2InodeType::Directory))
 				return;
@@ -384,7 +384,7 @@ namespace Kernel
 		{
 			KPrintf("\n-----Ext2FileSystem DUMP Dirent START-----\n");
 			char* tmpname = new char[dir->NameLength + 1];
-			Std::Memcpy(tmpname, dir->Name, dir->NameLength);
+			Al::Memcpy(tmpname, dir->Name, dir->NameLength);
 			tmpname[dir->NameLength] = 0;
 			KPrintf("Name = %s\n", tmpname);
 			delete[] tmpname;

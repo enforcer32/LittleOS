@@ -1,7 +1,7 @@
-#include <Standard/StaticString.h>
-#include <Standard/CString.h>
+#include <Al/StaticString.h>
+#include <Al/CString.h>
 
-namespace Std
+namespace Al
 {
 	StaticString::~StaticString()
 	{
@@ -31,22 +31,22 @@ namespace Std
 
 	bool StaticString::operator==(const char* rhs) const
 	{
-		return !Std::Strncmp(m_Data, rhs, m_Size);
+		return !Al::Strncmp(m_Data, rhs, m_Size);
 	}
 
 	bool StaticString::operator==(const StaticString& rhs) const
 	{
-		return !Std::Strncmp(m_Data, rhs.m_Data, m_Size);
+		return !Al::Strncmp(m_Data, rhs.m_Data, m_Size);
 	}
 
 	bool StaticString::operator!=(const char* rhs) const
 	{
-		return Std::Strncmp(m_Data, rhs, m_Size);
+		return Al::Strncmp(m_Data, rhs, m_Size);
 	}
 
 	bool StaticString::operator!=(const StaticString& rhs) const
 	{
-		return Std::Strncmp(m_Data, rhs.m_Data, m_Size);
+		return Al::Strncmp(m_Data, rhs.m_Data, m_Size);
 	}
 
 	UniquePtr<StaticString> StaticString::Clone() const

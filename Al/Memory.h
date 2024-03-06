@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Standard/Types.h>
-#include <Standard/Utility.h>
-#include <Standard/Forward.h>
+#include <Al/Types.h>
+#include <Al/Utility.h>
+#include <Al/Forward.h>
 
-namespace Std
+namespace Al
 {
 	template <typename T>
 	class UniquePtr

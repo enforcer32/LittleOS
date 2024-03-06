@@ -1,6 +1,6 @@
-#include <Standard/CString.h>
+#include <Al/CString.h>
 
-namespace Std
+namespace Al
 {
 	size_t Strlen(const char* str)
 	{

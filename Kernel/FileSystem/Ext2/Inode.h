@@ -1,7 +1,7 @@
 #pragma once
 
-#include <Standard/Types.h>
-#include <Standard/CString.h>
+#include <Al/Types.h>
+#include <Al/CString.h>
 
 #define EXT2_MAX_FILENAME 255
 #define EXT2_DBP_SIZE 12
@@ -68,7 +68,7 @@ namespace Kernel
 		{
 			Ext2Inode()
 			{
-				Std::Memset(this, 0, sizeof(Ext2Inode));
+				Al::Memset(this, 0, sizeof(Ext2Inode));
 			}
 
 			bool Valid() const

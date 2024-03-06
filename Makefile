@@ -15,13 +15,13 @@ ARCHDIR   = Kernel/Arch/x86
 KERNELDIR = Kernel
 DRIVERSDIR = Kernel/Drivers
 FILESYSTEMDIR = Kernel/FileSystem
-STANDARDDIR = Standard
+ALDIR = Al
 
 include $(ARCHDIR)/make.config
 include $(KERNELDIR)/make.config
 include $(DRIVERSDIR)/make.config
 include $(FILESYSTEMDIR)/make.config
-include $(STANDARDDIR)/make.config
+include $(ALDIR)/make.config
 
 CFLAGS 	:= $(CFLAGS) $(LIBDIR)
 
@@ -30,7 +30,7 @@ $(ARCH_OBJS) \
 $(KERNEL_OBJS) \
 $(DRIVERS_OBJS) \
 $(FILESYSTEM_OBJS) \
-$(STANDARD_OBJS) \
+$(AL_OBJS) \
 
 OBJS_OUT := $(foreach item,$(OBJS),$(BUILDDIR)/$(item))
 

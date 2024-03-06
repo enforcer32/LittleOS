@@ -1,7 +1,7 @@
-#include <Standard/String.h>
-#include <Standard/CString.h>
+#include <Al/String.h>
+#include <Al/CString.h>
 
-namespace Std
+namespace Al
 {
 	String::String()
 		: m_Data(nullptr), m_Size(0)
@@ -63,12 +63,12 @@ namespace Std
 
 	bool String::operator==(const String& rhs) const
 	{
-		return !Std::Strncmp(m_Data, rhs.m_Data, m_Size);
+		return !Al::Strncmp(m_Data, rhs.m_Data, m_Size);
 	}
 
 	bool String::operator!=(const String& rhs) const
 	{
-		return Std::Strncmp(m_Data, rhs.m_Data, m_Size);
+		return Al::Strncmp(m_Data, rhs.m_Data, m_Size);
 	}
 
 	String String::operator+(const String& rhs) const

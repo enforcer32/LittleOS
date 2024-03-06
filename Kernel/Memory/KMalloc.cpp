@@ -2,7 +2,7 @@
 #include <Kernel/Memory/Heap.h>
 #include <Kernel/Lib/KPrintf.h>
 #include <Kernel/Lib/KPanic.h>
-#include <Standard/CString.h>
+#include <Al/CString.h>
 
 void* operator new(size_t size)
 {
@@ -64,7 +64,7 @@ namespace Kernel
 		{
 			void* ptr = KMalloc(size);
 			if (!ptr) return 0;
-			Std::Memset(ptr, 0x0, size);
+			Al::Memset(ptr, 0x0, size);
 			return ptr;
 		}
 

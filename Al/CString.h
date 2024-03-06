@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Standard/Types.h>
+#include <Al/Types.h>
 
-namespace Std
+namespace Al
 {
 	size_t Strlen(const char* str);
 	size_t Strnlen(const char* str, size_t maxlen);

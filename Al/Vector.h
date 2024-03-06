@@ -1,9 +1,9 @@
 #pragma once
 
-#include <Standard/Types.h>
-#include <Standard/Utility.h>
+#include <Al/Types.h>
+#include <Al/Utility.h>
 
-namespace Std
+namespace Al
 {
 	template<typename T>
 	class Vector
@@ -44,7 +44,7 @@ namespace Std
 			if (m_Size >= m_Capacity)
 				Resize(m_Capacity * 2);
 
-			m_Data[m_Size++] = Std::Move(value);
+			m_Data[m_Size++] = Al::Move(value);
 		}
 
 		void PopBack()
@@ -78,7 +78,7 @@ namespace Std
 		{
 			T* data = (T*)::operator new(capacity * sizeof(T));
 			for (size_t i = 0; i < m_Size; i++)
-				data[i] = Std::Move(m_Data[i]);
+				data[i] = Al::Move(m_Data[i]);
 			for (size_t i = 0; i < m_Size; i++)
 				m_Data[m_Size].~T();
 			::operator delete(m_Data, m_Capacity * sizeof(T));

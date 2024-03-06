@@ -1,6 +1,6 @@
 #include <Kernel/Drivers/VGA.h>
 #include <Kernel/CPU/Port.h>
-#include <Standard/CString.h>
+#include <Al/CString.h>
 
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
@@ -71,7 +71,7 @@ namespace Kernel
 
 		void VGA::PutStr(const char* str)
 		{
-			for (uint32_t i = 0; i < Std::Strlen(str); i++)
+			for (uint32_t i = 0; i < Al::Strlen(str); i++)
 				PutChar(str[i]);
 		}
 
@@ -127,9 +127,9 @@ namespace Kernel
 		{
 			uint8_t* start = (uint8_t*)s_VideoAddress + VGA_WIDTH * 2;
 			uint32_t size = s_Row * VGA_WIDTH * 2;
-			Std::Memcpy(s_VideoAddress, start, size);
+			Al::Memcpy(s_VideoAddress, start, size);
 			start = (uint8_t*)s_VideoAddress + size;
-			Std::Memsetw(start, VGA_ENCODE(' ', (uint8_t)VGAColor::Black), size);
+			Al::Memsetw(start, VGA_ENCODE(' ', (uint8_t)VGAColor::Black), size);
 			s_Row--;
 		}
 	}

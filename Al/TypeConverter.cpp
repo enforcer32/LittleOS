@@ -1,7 +1,7 @@
-#include <Standard/TypeConverter.h>
-#include <Standard/CString.h>
+#include <Al/TypeConverter.h>
+#include <Al/CString.h>
 
-namespace Std
+namespace Al
 {
 	namespace TypeConverter
 	{

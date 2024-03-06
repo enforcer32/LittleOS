@@ -1,6 +1,6 @@
 #pragma once
 
-namespace Std
+namespace Al
 {
 	template<class T>
 	struct RemoveReference

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <Standard/Memory.h>
-#include <Standard/StaticString.h>
-#include <Standard/Vector.h>
+#include <Al/Memory.h>
+#include <Al/StaticString.h>
+#include <Al/Vector.h>
 
 namespace Kernel
 {
@@ -10,10 +10,10 @@ namespace Kernel
 	{
 		struct Ext2Path
 		{
-			Std::UniquePtr<Std::StaticString> Path;
-			Std::Vector<Std::UniquePtr<Std::StaticString>> Parts;
-			Std::UniquePtr<Std::StaticString> Root;
-			Std::UniquePtr<Std::StaticString> Target;
+			Al::UniquePtr<Al::StaticString> Path;
+			Al::Vector<Al::UniquePtr<Al::StaticString>> Parts;
+			Al::UniquePtr<Al::StaticString> Root;
+			Al::UniquePtr<Al::StaticString> Target;
 
 			operator bool() { return *Root.Get() == "/"; }
 		};
@@ -21,11 +21,11 @@ namespace Kernel
 		class Ext2PathParser
 		{
 		public:
-			Ext2PathParser(const Std::UniquePtr<Std::StaticString>& path);
-			Std::UniquePtr<Ext2Path> Parse();
+			Ext2PathParser(const Al::UniquePtr<Al::StaticString>& path);
+			Al::UniquePtr<Ext2Path> Parse();
 
 		private:
-			Std::UniquePtr<Std::StaticString> m_Path;
+			Al::UniquePtr<Al::StaticString> m_Path;
 		};
 	}
 }

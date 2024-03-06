@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Kernel/Drivers/ATA.h>
-#include <Standard/Memory.h>
+#include <Al/Memory.h>
 
 namespace Kernel
 {
@@ -10,7 +10,7 @@ namespace Kernel
 		class Disk
 		{
 		public:
-			int32_t Init(Std::UniquePtr<Drivers::ATA> ata);
+			int32_t Init(Al::UniquePtr<Drivers::ATA> ata);
 			size_t GetSectorSize() const;
 			int32_t ReadSector(void* buf, size_t sector, size_t lba);
 			int32_t WriteSector(const void* buf, size_t sector, size_t lba);
@@ -18,7 +18,7 @@ namespace Kernel
 			int32_t Write(const void* buf, size_t len, size_t offset);
 
 		private:
-			Std::UniquePtr<Drivers::ATA> m_ATA;
+			Al::UniquePtr<Drivers::ATA> m_ATA;
 		};
 	}
 }

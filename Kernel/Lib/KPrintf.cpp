@@ -1,6 +1,6 @@
 #include <Kernel/Lib/KPrintf.h>
 #include <Kernel/Drivers/VGA.h>
-#include <Standard/TypeConverter.h>
+#include <Al/TypeConverter.h>
 
 namespace Kernel
 {
@@ -34,14 +34,14 @@ namespace Kernel
 			case 'i': {
 				val = va_arg(ap, int);
 				char tmp[12];
-				Std::TypeConverter::IntToStr(val, tmp, sizeof(tmp), 10);
+				Al::TypeConverter::IntToStr(val, tmp, sizeof(tmp), 10);
 				KPrint(tmp);
 				break;
 			}
 			case 'x': {
 				val = va_arg(ap, int);
 				char tmp[12];
-				Std::TypeConverter::IntToStr(val, tmp, sizeof(tmp), 16);
+				Al::TypeConverter::IntToStr(val, tmp, sizeof(tmp), 16);
 				KPrint(tmp);
 				break;
 			}
