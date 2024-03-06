@@ -10,6 +10,7 @@
 #include <Kernel/FileSystem/Disk.h>
 #include <Standard/Utility.h>
 #include <Standard/CString.h>
+#include <Kernel/FileSystem/Ext2/FileSystem.h>
 
 namespace Kernel
 {
@@ -52,9 +53,17 @@ namespace Kernel
 		// Init FileSystem
 		auto ata = Std::UniquePtr<Drivers::ATA>(new Drivers::ATA);
 		ata->Init(Drivers::ATABus::Primary, Drivers::ATADrive::Slave);
-		FileSystem::Disk disk;
-		disk.Init(Std::Move(ata));
+		Std::UniquePtr<FileSystem::Disk> disk;
+		disk.Reset(new FileSystem::Disk);
+		disk->Init(Std::Move(ata));
+
+		FileSystem::Ext2FileSystem ext2fs;
+		if (ext2fs.Init(Std::Move(disk)) != 0)
+			KPanic("Failed to Initialize Ext2FileSystem\n");
 		
+		//ext2fs.DumpSuperblock();
+		//ext2fs.DumpBlockGroupDescriptorTable();
+
 		KPrintf("Kernel Initialized\n");
 		for(;;);
 	}

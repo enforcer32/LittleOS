@@ -11,6 +11,7 @@ namespace Kernel
 		{
 		public:
 			int32_t Init(Std::UniquePtr<Drivers::ATA> ata);
+			size_t GetSectorSize() const;
 			int32_t ReadSector(void* buf, size_t sector, size_t lba);
 			int32_t WriteSector(const void* buf, size_t sector, size_t lba);
 			int32_t Read(void* buf, size_t len, size_t offset);

@@ -12,6 +12,11 @@ namespace Kernel
 			return 0;
 		}
 
+		size_t Disk::GetSectorSize() const
+		{
+			return m_ATA->GetSectorSize();
+		}
+
 		int32_t Disk::ReadSector(void* buf, size_t sector, size_t lba)
 		{
 			return m_ATA->Read28(buf, sector, lba);
