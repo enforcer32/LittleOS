@@ -1,5 +1,7 @@
 #include <Kernel/FileSystem/Ext2/FileSystem.h>
+#include <Kernel/FileSystem/Ext2/PathParser.h>
 #include <Kernel/Lib/KPrintf.h>
+#include <Kernel/Lib/KPanic.h>
 #include <Standard/Utility.h>
 #include <Standard/CString.h>
 
@@ -10,79 +12,35 @@ namespace Kernel
 		int32_t Ext2FileSystem::Init(Std::UniquePtr<Disk> disk)
 		{
 			m_Disk = Std::Move(disk);
-			
+
 			if (ParseSuperblock() != 0)
 			{
-				KPrintf("Failed to Parse Superblock\n");
+				KPrintf("Ext2FileSystem Failed to Parse Superblock\n");
 				return -1;
 			}
 
-			if (ParseBlockGroupDescriptorTable() != 0)
+			if (ParseBlockGroupDescriptors() != 0)
 			{
-				KPrintf("Failed to Parse ParseBlockGroupDescriptorTable\n");
+				KPrintf("Ext2FileSystem Failed to Parse ParseBlockGroupDescriptorTable\n");
 				return -1;
 			}
 
-			m_RootInode.Reset(GetInode(EXT2_ROOT_INODE));
+			m_RootInode = GetInode(EXT2_ROOT_INODE);
 			if (!m_RootInode)
 			{
-				KPrintf("Failed to Get Root Inode: %d\n", EXT2_ROOT_INODE);
+				KPrintf("Ext2FileSystem Failed to Get Root Inode: %d\n", EXT2_ROOT_INODE);
 				return -1;
 			}
-
-			//DumpInode(*m_RootInode.Get());
-			DumpInodeDirs(*m_RootInode.Get());
 
 			return 0;
 		}
 
-		void Ext2FileSystem::Free()
-		{
-
-		}
-
-		void* Ext2FileSystem::ReadBlock(size_t block)
-		{
-			uint8_t* buf = new uint8_t[m_Superblock->BlockSize];
-			if (m_Disk->Read(buf, m_Superblock->BlockSize, (block * (m_Superblock->BlockSize / m_Disk->GetSectorSize()))) != (int32_t)m_Superblock->BlockSize)
-			{
-				KPrintf("Ext2FS Read Block Error");
-				return nullptr;
-			}
-			return buf;
-		}
-
-		const Ext2BlockGroupDescriptor& Ext2FileSystem::GetBlockGroupDescriptor(uint32_t group)
-		{
-			return m_BlockGroupDescriptors[group];
-		}
-
-		Ext2Inode* Ext2FileSystem::GetInode(uint32_t inode)
-		{
-			if (inode == 0)
-				return {};
-
-			uint32_t bg = (inode - 1) / m_Superblock->BlockGroupInodeCount;
-			auto& bgd = GetBlockGroupDescriptor(bg);
-
-			uint32_t index = (inode - 1) % m_Superblock->BlockGroupInodeCount;
-			uint32_t block = (index * m_Superblock->InodeSize) / m_Superblock->BlockSize;
-			index = index % (m_Superblock->BlockSize / m_Superblock->InodeSize);
-			uint32_t offset = (index * m_Superblock->InodeSize);
-
-			uint8_t* inodetable = (uint8_t*)ReadBlock(bgd.InodeTable + block);
-			Ext2Inode* inodebuf = new Ext2Inode;
-			*inodebuf = *(Ext2Inode*)(inodetable + offset);
-			delete inodetable;
-			return inodebuf;
-		}
-
 		int32_t Ext2FileSystem::ParseSuperblock()
 		{
-			m_Superblock.Reset(new Ext2Superblock);
+			m_Superblock = Std::MakeUnique<Ext2Superblock>();
 			if (m_Disk->Read(m_Superblock.Get(), EXT2_SUPERBLOCK_SIZE, (EXT2_SUPERBLOCK_OFFSET / m_Disk->GetSectorSize())) != 1024)
 			{
-				KPrintf("Failed to Read Ext2Superblock\n");
+				KPrintf("Ext2FileSystem Failed to Read Ext2Superblock\n");
 				return -1;
 			}
 
@@ -99,21 +57,19 @@ namespace Kernel
 			return 0;
 		}
 
-		int32_t Ext2FileSystem::ParseBlockGroupDescriptorTable()
+		int32_t Ext2FileSystem::ParseBlockGroupDescriptors()
 		{
-			m_FirstBlockGroupDescriptorTable = m_Superblock->FirstDataBlock + 1;
+			m_FirstBlockGroup = m_Superblock->FirstDataBlock + 1;
 			m_BlockGroupDescriptorCount = m_Superblock->BlockCount / m_Superblock->BlockGroupBlockCount;
 			if (!m_BlockGroupDescriptorCount)
 				m_BlockGroupDescriptorCount = 1;
 
-			for (size_t i = 0; i < m_BlockGroupDescriptorCount; i++)
+			for (uint32_t i = 0; i < m_BlockGroupDescriptorCount; i++)
 			{
-				size_t index = (i * sizeof(Ext2BlockGroupDescriptor)) / m_Superblock->BlockSize;
-				size_t offset = (i * sizeof(Ext2BlockGroupDescriptor)) % m_Superblock->BlockSize;
+				uint32_t index = (i * sizeof(Ext2BlockGroupDescriptor)) / m_Superblock->BlockSize;
+				uint32_t offset = (i * sizeof(Ext2BlockGroupDescriptor)) % m_Superblock->BlockSize;
 
-				uint8_t* block = (uint8_t*)ReadBlock(m_FirstBlockGroupDescriptorTable + index);
-				if (!block)
-					return -1;
+				uint8_t* block = (uint8_t*)ReadBlock(m_FirstBlockGroup + index);
 				m_BlockGroupDescriptors.PushBack(*(Ext2BlockGroupDescriptor*)(block + offset));
 				delete block;
 			}
@@ -121,9 +77,195 @@ namespace Kernel
 			return 0;
 		}
 
+		const Ext2BlockGroupDescriptor& Ext2FileSystem::GetBlockGroupDescriptor(uint32_t group) const
+		{
+			return m_BlockGroupDescriptors[group];
+		}
+
+		Std::SharedPtr<Ext2Inode> Ext2FileSystem::GetInode(uint32_t inode)
+		{
+			if (inode == 0)
+				return {};
+
+			uint32_t bg = (inode - 1) / m_Superblock->BlockGroupInodeCount;
+			auto& bgd = GetBlockGroupDescriptor(bg);
+
+			uint32_t index = (inode - 1) % m_Superblock->BlockGroupInodeCount;
+			uint32_t block = (index * m_Superblock->InodeSize) / m_Superblock->BlockSize;
+
+			index = index % (m_Superblock->BlockSize / m_Superblock->InodeSize);
+			uint32_t offset = (index * m_Superblock->InodeSize);
+
+			uint8_t* inodetable = (uint8_t*)ReadBlock(bgd.InodeTable + block);
+			Std::SharedPtr<Ext2Inode> inodebuf = Std::MakeShared<Ext2Inode>(*(Ext2Inode*)(inodetable + offset));
+			delete inodetable;
+			return inodebuf;
+		}
+
+		Std::SharedPtr<Ext2Inode> Ext2FileSystem::GetInodeFromDir(const Std::SharedPtr<Ext2Inode>& inodebuf, const Std::UniquePtr<Std::StaticString>& name)
+		{
+			if (!(inodebuf->Mode & (uint16_t)Ext2InodeType::Directory))
+				return {};
+
+			for (uint32_t i = 0; i < EXT2_DBP_SIZE; i++)
+			{
+				if (!inodebuf->DBP[i]) continue;
+
+				uint8_t* data = (uint8_t*)ReadBlock(inodebuf->DBP[i]);
+				Ext2Dirent* dir = (Ext2Dirent*)data;
+
+				if (dir->Size == 0 || dir->NameLength == 0 || dir->Inode <= 0 || dir->Inode >= m_Superblock->InodeCount)
+				{
+					delete data;
+					break;
+				}
+
+				while (dir->NameLength > 0 && dir->Inode > 0 && dir->Inode < m_Superblock->InodeCount)
+				{
+					dir->Name[dir->NameLength] = 0;
+					if (!Std::Strncmp((char*)dir->Name, name->Data(), dir->NameLength))
+					{
+						uint32_t inode = dir->Inode;
+						delete data;
+						return GetInode(inode);
+					}
+					dir = (Ext2Dirent*)((uint8_t*)dir + dir->Size);
+				}
+
+				delete data;
+			}
+			return {};
+		}
+
+		Std::SharedPtr<Ext2Inode> Ext2FileSystem::GetInodeFromPath(const Std::UniquePtr<Std::StaticString>& path)
+		{
+			if (path->Size() == 1 && path->Data()[0] == '/')
+				return m_RootInode;
+
+			Ext2PathParser pathParser(path);
+			auto parsed = pathParser.Parse();
+			if (!parsed)
+			{
+				KPrintf("Ext2FileSystem Failed to ParsePath: %s\n", path->Data());
+				return {};
+			}
+
+			auto node = m_RootInode;
+			for (uint32_t i = 0; i < parsed->Parts.Size(); i++)
+			{
+				node = GetInodeFromDir(node, parsed->Parts[i]);
+				if (!node)
+				{
+					KPrintf("Ext2FileSystem Failed to Get %s From %s\n", parsed->Parts[i]->Data(), path->Data());
+					return {};
+				}
+
+				if (!(node->Mode & (uint16_t)Ext2InodeType::Directory))
+				{
+					KPrintf("Ext2FileSystem Not a Directory: %s\n", parsed->Parts[i]->Data(), path->Data());
+					return {};
+				}
+			}
+
+			return GetInodeFromDir(node, parsed->Target);
+		}
+
+		void* Ext2FileSystem::ReadBlock(size_t block)
+		{
+			uint8_t* buf = new uint8_t[m_Superblock->BlockSize];
+			if (m_Disk->Read(buf, m_Superblock->BlockSize, (block * (m_Superblock->BlockSize / m_Disk->GetSectorSize()))) != (int32_t)m_Superblock->BlockSize)
+			{
+				KPrintf("Ext2FileSystem Read Block Error\n");
+				return nullptr;
+			}
+			return buf;
+		}
+
+		void* Ext2FileSystem::ReadFile(const Std::SharedPtr<Ext2Inode>& inodebuf, size_t size)
+		{
+			if (!(inodebuf->Mode & (uint16_t)Ext2InodeType::RegularFile))
+				return nullptr;
+
+			uint32_t read = 0, curr = 0;
+			uint8_t* data = new uint8_t[size];
+			Std::Memset(data, 0, size);
+
+			for (size_t i = 0; i < EXT2_DBP_SIZE; i++)
+			{
+				if (inodebuf->DBP[i])
+				{
+					uint8_t* block = (uint8_t*)ReadBlock(inodebuf->DBP[i]);
+					while (read < size && curr < m_Superblock->BlockSize && block[curr])
+						data[read++] = block[curr++];
+					curr = 0;
+					delete[] block;
+
+					if (read >= size)
+						goto end;
+				}
+			}
+
+			if (read < size)
+			{
+				if (inodebuf->SIBP)
+				{
+					uint32_t* blocks = (uint32_t*)ReadBlock(inodebuf->SIBP);
+					for (size_t i = 0; i < m_Superblock->BlockSize / 4; i++)
+					{
+						if (blocks[i])
+						{
+							uint8_t* block = (uint8_t*)ReadBlock(blocks[i]);
+							while (read < size && curr < m_Superblock->BlockSize && block[curr])
+								data[read++] = block[curr++];
+							curr = 0;
+							delete[] block;
+
+							if (read >= size)
+								goto end;
+						}
+					}
+					delete blocks;
+				}
+
+				if (inodebuf->DIBP)
+				{
+					uint32_t* blocks = (uint32_t*)ReadBlock(inodebuf->DIBP);
+					for (uint32_t i = 0; i < m_Superblock->BlockSize / 4; i++)
+					{
+						if (blocks[i])
+						{
+							uint32_t* subblocks = (uint32_t*)ReadBlock(blocks[i]);
+							for (uint32_t i = 0; i < m_Superblock->BlockSize / 4; i++)
+							{
+								if (subblocks[i])
+								{
+									uint8_t* block = (uint8_t*)ReadBlock(subblocks[i]);
+									while (read < size && curr < m_Superblock->BlockSize && block[curr])
+										data[read++] = block[curr++];
+									curr = 0;
+									delete[] block;
+
+									if (read >= size)
+										goto end;
+								}
+							}
+							delete subblocks;
+						}
+					}
+					delete blocks;
+				}
+
+				if (inodebuf->TIBP)
+					KPanic("Ext2FileSystem Doesn't Support Reading Triply Indirect Block Pointer\n");
+			}
+
+		end:
+			return data;
+		}
+
 		void Ext2FileSystem::DumpSuperblock()
 		{
-			KPrintf("\n-----EXT2 DUMP SUPERBLOCK START-----\n");
+			KPrintf("\n-----Ext2FileSystem DUMP SUPERBLOCK START-----\n");
 			KPrintf("InodeCount = %d\n", m_Superblock->InodeCount);
 			KPrintf("BlockCount = %d\n", m_Superblock->BlockCount);
 			KPrintf("ReservedBlockCount = %d\n", m_Superblock->ReservedBlockCount);
@@ -165,16 +307,13 @@ namespace Kernel
 			KPrintf("JournalDevice = %d\n", m_Superblock->JournalDevice);
 			KPrintf("OrphanInodeListHead = %d\n", m_Superblock->OrphanInodeListHead);
 			KPrintf("JournalInode = %d\n", m_Superblock->JournalInode);
-			KPrintf("-----EXT2 DUMP SUPERBLOCK EXTRA-----\n");
-			KPrintf("BlockGroupCount = %d\n", m_Superblock->BlockCount / m_Superblock->BlockGroupBlockCount);
-			KPrintf("BlockGroupSize = %d\n", m_Superblock->BlockSize * 8 - 1);
-			KPrintf("-----EXT2 DUMP SUPERBLOCK END-----\n");
+			KPrintf("-----Ext2FileSystem DUMP SUPERBLOCK END-----\n");
 		}
 
-		void Ext2FileSystem::DumpBlockGroupDescriptorTable()
+		void Ext2FileSystem::DumpBlockGroupDescriptors()
 		{
-			KPrintf("\n-----EXT2 DUMP (%d) BLOCKGROUP DESCRIPTOR START-----\n", m_BlockGroupDescriptorCount);
-			for (size_t i = 0; i < m_BlockGroupDescriptorCount; i++)
+			KPrintf("\n-----Ext2FileSystem DUMP (%d) BLOCKGROUP DESCRIPTOR START-----\n", m_BlockGroupDescriptorCount);
+			for (uint32_t i = 0; i < m_BlockGroupDescriptorCount; i++)
 			{
 				KPrintf("---START BlockGroup(%d)---\n", i);
 				KPrintf("BlockBitmap = %d\n", m_BlockGroupDescriptors[i].BlockBitmap);
@@ -185,75 +324,75 @@ namespace Kernel
 				KPrintf("DirCount = %d\n", m_BlockGroupDescriptors[i].DirCount);
 				KPrintf("---END BlockGroup(%d)---\n", i);
 			}
-			KPrintf("-----EXT2 DUMP (%d) BLOCKGROUP DESCRIPTOR END-----\n", m_BlockGroupDescriptorCount);
+			KPrintf("-----Ext2FileSystem DUMP (%d) BLOCKGROUP DESCRIPTOR END-----\n", m_BlockGroupDescriptorCount);
 		}
 
-		void Ext2FileSystem::DumpInode(const Ext2Inode& inode)
+		void Ext2FileSystem::DumpInode(const Std::SharedPtr<Ext2Inode>& inodebuf)
 		{
-			KPrintf("\n-----EXT2 DUMP INODE START-----\n");
-			KPrintf("Mode = %d\n", inode.Mode);
-			KPrintf("UserID = %d\n", inode.UserID);
-			KPrintf("SizeLow = %d\n", inode.SizeLow);
-			KPrintf("LastAccessTime = %d\n", inode.LastAccessTime);
-			KPrintf("LastCreationTime = %d\n", inode.LastCreationTime);
-			KPrintf("LastModificationTime = %d\n", inode.LastModificationTime);
-			KPrintf("DeletionTime = %d\n", inode.DeletionTime);
-			KPrintf("GroupID = %d\n", inode.GroupID);
-			KPrintf("HardLinkCount = %d\n", inode.HardLinkCount);
-			KPrintf("SectorCount = %d\n", inode.SectorCount);
-			KPrintf("Flags = %d\n", inode.Flags);
-			KPrintf("OSSV1 = %d\n", inode.OSSV1);
-			KPrintf("DPB = %d\n", inode.DBP);
-			KPrintf("DPB[0] = %d\n", inode.DBP[0]);
-			KPrintf("SIBP = %d\n", inode.SIBP);
-			KPrintf("DIBP = %d\n", inode.DIBP);
-			KPrintf("TIBP = %d\n", inode.TIBP);
-			KPrintf("FragmentAddr = %d\n", inode.FragmentAddr);
-			KPrintf("OSSV2 = %d\n", inode.OSSV2);
-			KPrintf("-----EXT2 DUMP INODE END-----\n");
+			KPrintf("\n-----Ext2FileSystem DUMP INODE START-----\n");
+			KPrintf("Mode = %d\n", inodebuf->Mode);
+			KPrintf("UserID = %d\n", inodebuf->UserID);
+			KPrintf("SizeLow = %d\n", inodebuf->SizeLow);
+			KPrintf("LastAccessTime = %d\n", inodebuf->LastAccessTime);
+			KPrintf("LastCreationTime = %d\n", inodebuf->LastCreationTime);
+			KPrintf("LastModificationTime = %d\n", inodebuf->LastModificationTime);
+			KPrintf("DeletionTime = %d\n", inodebuf->DeletionTime);
+			KPrintf("GroupID = %d\n", inodebuf->GroupID);
+			KPrintf("HardLinkCount = %d\n", inodebuf->HardLinkCount);
+			KPrintf("SectorCount = %d\n", inodebuf->SectorCount);
+			KPrintf("Flags = %d\n", inodebuf->Flags);
+			KPrintf("OSSV1 = %d\n", inodebuf->OSSV1);
+			KPrintf("DPB = %d\n", inodebuf->DBP);
+			KPrintf("DPB[0] = %d\n", inodebuf->DBP[0]);
+			KPrintf("SIBP = %d\n", inodebuf->SIBP);
+			KPrintf("DIBP = %d\n", inodebuf->DIBP);
+			KPrintf("TIBP = %d\n", inodebuf->TIBP);
+			KPrintf("FragmentAddr = %d\n", inodebuf->FragmentAddr);
+			KPrintf("OSSV2 = %d\n", inodebuf->OSSV2);
+			KPrintf("-----Ext2FileSystem DUMP INODE END-----\n");
 		}
 
-		void Ext2FileSystem::DumpInodeDirs(const Ext2Inode& inode)
+		void Ext2FileSystem::DumpDirInode(const Std::SharedPtr<Ext2Inode>& inodebuf)
 		{
-			if (!(inode.Mode & (uint16_t)Ext2InodeType::Directory))
+			if (!(inodebuf->Mode & (uint16_t)Ext2InodeType::Directory))
 				return;
 
-			for (size_t i = 0; i < EXT2_DBP_SIZE; i++)
+			for (uint32_t i = 0; i < EXT2_DBP_SIZE; i++)
 			{
-				if (!inode.DBP[i])
-					continue;
+				if (!inodebuf->DBP[i]) continue;
 
-				Ext2DirEntry* dir = (Ext2DirEntry*)ReadBlock(inode.DBP[i]);
+				uint8_t* data = (uint8_t*)ReadBlock(inodebuf->DBP[i]);
+				Ext2Dirent* dir = (Ext2Dirent*)data;
 
 				if (dir->Size == 0 || dir->NameLength == 0 || dir->Inode <= 0 || dir->Inode >= m_Superblock->InodeCount)
 				{
-					delete dir;
+					delete data;
 					break;
 				}
 
 				while (dir->NameLength > 0 && dir->Inode > 0 && dir->Inode < m_Superblock->InodeCount)
 				{
-					DumpDirEntry(*dir);
-					dir = (Ext2DirEntry*)((uint8_t*)dir + dir->Size);
+					DumpDirent(dir);
+					dir = (Ext2Dirent*)((uint8_t*)dir + dir->Size);
 				}
 
-				delete dir;
+				delete data;
 			}
 		}
 
-		void Ext2FileSystem::DumpDirEntry(const Ext2DirEntry& dir)
+		void Ext2FileSystem::DumpDirent(const Ext2Dirent* dir)
 		{
-			KPrintf("\n-----EXT2 DUMP Dirent START-----\n");
-			char* tmpname = new char[dir.NameLength + 1];
-			Std::Memcpy(tmpname, dir.Name, dir.NameLength);
-			tmpname[dir.NameLength] = 0;
+			KPrintf("\n-----Ext2FileSystem DUMP Dirent START-----\n");
+			char* tmpname = new char[dir->NameLength + 1];
+			Std::Memcpy(tmpname, dir->Name, dir->NameLength);
+			tmpname[dir->NameLength] = 0;
 			KPrintf("Name = %s\n", tmpname);
 			delete[] tmpname;
-			KPrintf("Inode = %d\n", dir.Inode);
-			KPrintf("Size = %d\n", dir.Size);
-			KPrintf("NameLength = %d\n", dir.NameLength);
-			KPrintf("Type = %d\n", dir.Type);
-			KPrintf("-----EXT2 DUMP Dirent END-------\n");
+			KPrintf("Inode = %d\n", dir->Inode);
+			KPrintf("Size = %d\n", dir->Size);
+			KPrintf("NameLength = %d\n", dir->NameLength);
+			KPrintf("Type = %d\n", dir->Type);
+			KPrintf("-----Ext2FileSystem DUMP Dirent END-------\n");
 		}
 	}
 }

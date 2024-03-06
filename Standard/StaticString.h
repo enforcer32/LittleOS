@@ -1,7 +1,6 @@
 #pragma once
 
-#include <Standard/UniquePtr.h>
-#include <Standard/Types.h>
+#include <Standard/Memory.h>
 
 namespace Std
 {
@@ -14,6 +13,11 @@ namespace Std
 		StaticString& operator=(const StaticString&) = delete;
 		StaticString(StaticString&&) = delete;
 		StaticString& operator=(StaticString&&) = delete;
+
+		bool operator==(const char* rhs) const;
+		bool operator==(const StaticString& rhs) const;
+		bool operator!=(const char* rhs) const;
+		bool operator!=(const StaticString& rhs) const;
 
 		UniquePtr<StaticString> Clone() const;
 		const char* Data() const;

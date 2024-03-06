@@ -29,6 +29,26 @@ namespace Std
 		m_Size = size;
 	}
 
+	bool StaticString::operator==(const char* rhs) const
+	{
+		return !Std::Strncmp(m_Data, rhs, m_Size);
+	}
+
+	bool StaticString::operator==(const StaticString& rhs) const
+	{
+		return !Std::Strncmp(m_Data, rhs.m_Data, m_Size);
+	}
+
+	bool StaticString::operator!=(const char* rhs) const
+	{
+		return Std::Strncmp(m_Data, rhs, m_Size);
+	}
+
+	bool StaticString::operator!=(const StaticString& rhs) const
+	{
+		return Std::Strncmp(m_Data, rhs.m_Data, m_Size);
+	}
+
 	UniquePtr<StaticString> StaticString::Clone() const
 	{
 		return UniquePtr<StaticString>(new StaticString(m_Data));

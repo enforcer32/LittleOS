@@ -8,7 +8,7 @@
 #include <Kernel/Memory/KMalloc.h>
 #include <Kernel/Memory/PageManager.h>
 #include <Kernel/FileSystem/Disk.h>
-#include <Standard/Utility.h>
+#include <Standard/Memory.h>
 #include <Standard/CString.h>
 #include <Kernel/FileSystem/Ext2/FileSystem.h>
 
@@ -51,16 +51,29 @@ namespace Kernel
 		CPU::EnableInterrupts();
 
 		// Init FileSystem
-		auto ata = Std::UniquePtr<Drivers::ATA>(new Drivers::ATA);
+		auto ata = Std::MakeUnique<Drivers::ATA>();
 		ata->Init(Drivers::ATABus::Primary, Drivers::ATADrive::Slave);
-		Std::UniquePtr<FileSystem::Disk> disk;
-		disk.Reset(new FileSystem::Disk);
+		Std::UniquePtr<FileSystem::Disk> disk = Std::MakeUnique<FileSystem::Disk>();
 		disk->Init(Std::Move(ata));
 
 		FileSystem::Ext2FileSystem ext2fs;
 		if (ext2fs.Init(Std::Move(disk)) != 0)
 			KPanic("Failed to Initialize Ext2FileSystem\n");
-		
+
+		auto file = ext2fs.GetInodeFromPath(Std::StaticString::Create("/hello/greet.txt"));
+		if (file->Valid())
+		{
+			KPrintf("Test: %s\n", ext2fs.ReadFile(file, 4096));
+		}
+		else
+		{
+			KPrintf("NOT FOUND\n");
+		}
+
+		//ext2fs.DumpInode(file);
+		//auto data = ext2fs.ReadFile(file, 4096);
+		//KPrintf("Read: %s\n", data);
+
 		//ext2fs.DumpSuperblock();
 		//ext2fs.DumpBlockGroupDescriptorTable();
 

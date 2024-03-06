@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Standard/Types.h>
 #include <Standard/Utility.h>
 
 namespace Std

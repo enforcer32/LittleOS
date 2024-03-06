@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Kernel/Drivers/ATA.h>
-#include <Standard/UniquePtr.h>
+#include <Standard/Memory.h>
 
 namespace Kernel
 {

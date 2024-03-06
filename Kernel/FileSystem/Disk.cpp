@@ -1,5 +1,4 @@
 #include <Kernel/FileSystem/Disk.h>
-#include <Standard/Utility.h>
 #include <Standard/CString.h>
 
 namespace Kernel

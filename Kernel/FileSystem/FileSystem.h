@@ -13,7 +13,6 @@ namespace Kernel
 			virtual ~FileSystem() = default;
 
 			virtual int32_t Init(Std::UniquePtr<Disk> disk) = 0;
-			virtual void Free() = 0;
 		};
 	}
 }

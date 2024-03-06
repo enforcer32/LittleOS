@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Standard/Types.h>
+#include <Standard/CString.h>
 
 #define EXT2_MAX_FILENAME 255
 #define EXT2_DBP_SIZE 12
@@ -36,7 +37,7 @@ namespace Kernel
 			SetGroupID = 0x400,
 			SetUserID = 0x800
 		};
-		
+
 		enum class Ext2InodeFlags : uint32_t
 		{
 			SecureDeletion = 0x00000001,
@@ -65,6 +66,16 @@ namespace Kernel
 
 		struct Ext2Inode
 		{
+			Ext2Inode()
+			{
+				Std::Memset(this, 0, sizeof(Ext2Inode));
+			}
+
+			bool Valid() const
+			{
+				return Mode != 0;
+			}
+
 			uint16_t Mode;
 			uint16_t UserID;
 			uint32_t SizeLow;
@@ -95,7 +106,7 @@ namespace Kernel
 			uint8_t OSSV2[12];
 		} __attribute__((packed));
 
-		struct Ext2DirEntry
+		struct Ext2Dirent
 		{
 			uint32_t Inode;
 			uint16_t Size;
